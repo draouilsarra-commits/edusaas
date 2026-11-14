@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}{% block title %}Messagerie{% endblock %}
+{% block content %}<h1>✉️ Messagerie</h1><p class="sub">{{ sent_count }} message(s) envoyé(s)</p>
+<div class="grid g2">
+<div class="card"><h2>Boîte de réception</h2>
+{% if inbox %}<table><tr><th>Date</th><th>De</th><th>Objet</th></tr>
+{% for m in inbox %}<tr class="{{ 'unread' if not m.read_at }}"><td>{{ m.sent_at.strftime('%d/%m/%Y') }}</td><td>{{ m.sender.full_name if m.sender else 'Système' }}</td>
+<td><a href="{{ url_for('main.message_read', mid=m.id) }}">{{ m.subject }}</a> {% if not m.read_at %}<span class="badge orange">Nouveau</span>{% endif %}</td></tr>{% endfor %}</table>
+{% else %}<p class="muted">Aucun message.</p>{% endif %}</div>
+<form method="post" class="card">{{ csrf() }}<h2>Nouveau message</h2>
+{% if current_user.role in ['parent','eleve'] %}<p class="muted">Destinataire : administration de l'établissement</p>
+{% else %}<p><select name="target" style="width:100%">
+{% if current_user.role in ['admin','directeur'] %}<option value="all_parents">Tous les parents</option>{% endif %}
+{% for c in classes %}<option value="class_{{ c.id }}">Parents de la classe {{ c.name }}</option>{% endfor %}</select></p>{% endif %}
+<p><input name="subject" placeholder="Objet" required style="width:100%"></p><p><textarea name="body" placeholder="Votre message…" required></textarea></p>
+<button class="btn">Envoyer</button></form></div>{% endblock %}

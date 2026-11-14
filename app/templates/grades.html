@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}{% block title %}Notes{% endblock %}
+{% block content %}<h1>✏️ Saisie des notes</h1><p class="sub">Note trimestrielle sur 20 · laisser vide pour ne pas modifier</p>
+<form class="inline card" method="get">
+<select name="classe">{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if c.id == cid }}>{{ c.name }}</option>{% endfor %}</select>
+<select name="matiere">{% for s in subjects %}<option value="{{ s.id }}" {{ 'selected' if s.id == subj_id }}>{{ s.name }}</option>{% endfor %}</select>
+<select name="trimestre">{% for t in [1,2,3] %}<option value="{{ t }}" {{ 'selected' if t == term }}>Trimestre {{ t }}</option>{% endfor %}</select>
+<button class="btn ghost">Afficher</button></form>
+<form method="post" class="card">{{ csrf() }}<input type="hidden" name="classe" value="{{ cid }}"><input type="hidden" name="matiere" value="{{ subj_id }}"><input type="hidden" name="trimestre" value="{{ term }}">
+<table><tr><th>Élève</th><th style="width:140px">Note /20</th></tr>
+{% for s in students %}<tr><td>{{ s.last_name }} {{ s.first_name }}</td><td><input name="note_{{ s.id }}" value="{{ '%.2f'|format(existing[s.id].score) if s.id in existing else '' }}" style="width:90px" inputmode="decimal"></td></tr>{% endfor %}
+</table><p><button class="btn">Enregistrer les notes</button></p></form>{% endblock %}

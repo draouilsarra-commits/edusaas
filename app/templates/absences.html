@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}{% block title %}Absences{% endblock %}
+{% block content %}<h1>🕒 Appel et absences</h1><p class="sub">Les parents sont notifiés automatiquement par message</p>
+<form class="inline card" method="get">
+<select name="classe">{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if c.id == cid }}>{{ c.name }}</option>{% endfor %}</select>
+<input type="date" name="date" value="{{ day.isoformat() }}"><button class="btn ghost">Afficher</button></form>
+{% if current_user.role != 'directeur' %}
+<form method="post" class="card">{{ csrf() }}<input type="hidden" name="classe" value="{{ cid }}"><input type="hidden" name="date" value="{{ day.isoformat() }}">
+<h2>Appel du {{ day.strftime('%d/%m/%Y') }}</h2>
+<table><tr><th>Élève</th><th>Présent</th><th>Absent</th><th>Retard</th></tr>
+{% for s in students %}<tr><td>{{ s.last_name }} {{ s.first_name }}</td>
+<td><input type="radio" name="st_{{ s.id }}" value="present" checked></td><td><input type="radio" name="st_{{ s.id }}" value="absence"></td><td><input type="radio" name="st_{{ s.id }}" value="retard"></td></tr>{% endfor %}
+</table><p><button class="btn">Valider l'appel</button></p></form>{% endif %}
+<div class="card"><h2>Historique récent de la classe</h2><table><tr><th>Date</th><th>Élève</th><th>Type</th><th>Statut</th></tr>
+{% for a in recent %}<tr><td>{{ a.on_date.strftime('%d/%m/%Y') }}</td><td><a href="{{ url_for('main.student_detail', sid=a.student_id) }}">{{ a.student.full_name }}</a></td><td>{{ a.kind }}</td>
+<td>{% if a.justified %}<span class="badge green">Justifiée</span>{% else %}<span class="badge red">Non justifiée</span>{% endif %}</td></tr>{% endfor %}</table></div>{% endblock %}

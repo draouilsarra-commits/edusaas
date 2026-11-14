@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}{% block title %}Emploi du temps{% endblock %}
+{% block content %}<h1>🗓️ {{ title or 'Emplois du temps' }}</h1><p class="sub">Créneaux d'une heure · conflits surlignés en rouge</p>
+{% if current_user.role in ['admin','directeur','comptable'] %}
+<form class="inline card noprint" method="get">
+  <label class="muted">Classe</label><select name="classe" onchange="this.form.submit()"><option value="">—</option>{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if request.args.get('classe')|int == c.id }}>{{ c.name }}</option>{% endfor %}</select>
+  <label class="muted">ou enseignant</label><select name="enseignant" onchange="this.form.submit()"><option value="">—</option>{% for t in teachers|sort(attribute='user.full_name') %}<option value="{{ t.id }}" {{ 'selected' if request.args.get('enseignant')|int == t.id }}>{{ t.name }}</option>{% endfor %}</select>
+</form>{% elif current_user.role == 'parent' and classes|length > 1 %}
+<div class="tabs">{% for c in classes %}<a href="{{ url_for('main.timetable', classe=c.id) }}">{{ c.name }}</a>{% endfor %}</div>{% endif %}
+<div class="card" style="overflow-x:auto"><table class="tt"><tr><th style="width:80px">Heure</th>{% for d in days %}<th>{{ d }}</th>{% endfor %}</tr>
+{% for h in hours %}<tr><td><b>{{ h }}h–{{ h+1 }}h</b></td>{% for di in range(days|length) %}<td>
+{% for s in grid.get((di, h), []) %}<div class="slot {{ 'conf' if grid.get((di, h))|length > 1 }}"><b>{{ s.subject.name }}</b>{{ s.classroom.name }} · {{ s.teacher.name }}<br><span class="muted">{{ s.room.name }}</span></div>{% endfor %}
+</td>{% endfor %}</tr>{% endfor %}</table></div>
+{% if current_user.role == 'admin' %}
+<form method="post" class="card noprint">{{ csrf() }}<h2>Ajouter un créneau (contrôle automatique des conflits)</h2><div class="form-grid">
+<label>Classe<select name="classroom_id">{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if request.args.get('classe')|int == c.id }}>{{ c.name }}</option>{% endfor %}</select></label>
+<label>Matière<select name="subject_id">{% for s in subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></label>
+<label>Enseignant<select name="teacher_id">{% for t in teachers|sort(attribute='user.full_name') %}<option value="{{ t.id }}">{{ t.name }} ({{ t.subject.name }})</option>{% endfor %}</select></label>
+<label>Salle<select name="room_id">{% for r in rooms %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}</select></label>
+<label>Jour<select name="day">{% for d in days %}<option value="{{ loop.index0 }}">{{ d }}</option>{% endfor %}</select></label>
+<label>Heure<select name="hour">{% for h in hours %}<option value="{{ h }}">{{ h }}h</option>{% endfor %}</select></label></div>
+<p><label class="muted"><input type="checkbox" name="force"> Forcer malgré un conflit</label></p><button class="btn">Ajouter</button></form>{% endif %}
+{% endblock %}

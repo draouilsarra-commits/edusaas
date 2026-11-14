@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% block title %}Bulletin {{ s.full_name }}{% endblock %}
+{% block content %}
+<div class="noprint" style="margin-bottom:12px"><div class="tabs">{% for t in [1,2,3] %}<a href="{{ url_for('main.bulletin', sid=s.id, trimestre=t) }}" class="{{ 'on' if t == term }}">Trimestre {{ t }}</a>{% endfor %}
+<a href="#" onclick="window.print();return false">🖨️ Imprimer</a></div></div>
+<div class="card" style="max-width:820px">
+  <div style="display:flex;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:14px">
+    <div><b style="font-size:17px">{{ s.school.name if s.school else current_user.school.name }}</b><br><span class="muted">Année scolaire {{ year.label }}</span></div>
+    <div class="right"><b style="font-size:17px">BULLETIN DE NOTES</b><br>Trimestre {{ term }}</div></div>
+  <p><b>Élève :</b> {{ s.full_name }} &nbsp; · &nbsp; <b>Classe :</b> {{ s.classroom.name }} &nbsp; · &nbsp; <b>Effectif :</b> {{ b.class_size }}</p>
+  {% if b.lines %}
+  <table><tr><th>Matière</th><th>Coef.</th><th class="right">Note /20</th><th class="right">Moy. classe</th><th>Appréciation</th></tr>
+  {% for l in b.lines %}<tr><td>{{ l.subject }}</td><td>{{ l.coef }}</td><td class="right"><b>{{ '%.2f'|format(l.score) }}</b></td><td class="right">{{ '%.2f'|format(l.class_avg) }}</td><td>{{ mention(l.score) }}</td></tr>{% endfor %}</table>
+  <div class="kpis" style="margin-top:16px">
+    <div class="kpi {{ 'good' if b.average >= 10 else 'bad' }}"><div class="l">Moyenne générale</div><div class="v">{{ '%.2f'|format(b.average) }}</div><div class="s">{{ mention(b.average) }}</div></div>
+    <div class="kpi"><div class="l">Rang</div><div class="v">{{ b.rank }}<span style="font-size:14px">/{{ b.class_size }}</span></div></div>
+    <div class="kpi"><div class="l">Moyenne de la classe</div><div class="v">{{ '%.2f'|format(b.class_average) }}</div></div>
+  </div>
+  <p><b>Décision du conseil :</b> {% if b.average >= 12 %}Félicitations, très bon trimestre.{% elif b.average >= 10 %}Résultats satisfaisants, poursuivre les efforts.{% else %}Résultats insuffisants – un accompagnement pédagogique est recommandé.{% endif %}</p>
+  {% else %}<p class="muted">Aucune note pour ce trimestre.</p>{% endif %}
+</div>{% endblock %}

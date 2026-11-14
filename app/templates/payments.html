@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% from "_macros.html" import pager %}{% block title %}Paiements{% endblock %}
+{% block content %}<h1>💳 Paiements et échéances</h1><p class="sub">Encaissement des mensualités de l'année en cours</p>
+<div class="tabs">{% for k, l in [('retard','En retard'),('a_venir','À venir'),('tout','Toutes')] %}<a href="{{ url_for('main.payments', filtre=k) }}" class="{{ 'on' if flt == k }}">{{ l }}</a>{% endfor %}</div>
+<div class="card"><form class="inline" method="get" style="margin-bottom:10px"><input type="hidden" name="filtre" value="{{ flt }}"><input name="q" placeholder="Nom de l'élève" value="{{ request.args.get('q','') }}"><button class="btn ghost">Rechercher</button></form>
+<table><tr><th>Élève</th><th>Classe</th><th>Échéance</th><th>Date</th><th>Montant</th><th>Reste</th><th>Statut</th>{% if current_user.role != 'directeur' %}<th>Encaisser</th>{% endif %}</tr>
+{% for f in page.items %}<tr><td><a href="{{ url_for('main.student_detail', sid=f.student_id) }}">{{ f.student.full_name }}</a></td><td>{{ f.student.classroom.name }}</td><td>{{ f.label }}</td><td>{{ f.due_date.strftime('%d/%m/%Y') }}</td>
+<td>{{ f.amount|money }}</td><td>{{ f.remaining|money }}</td><td>{% if f.remaining <= 0 %}<span class="badge green">Payé</span>{% elif f.is_late %}<span class="badge red">Retard</span>{% else %}<span class="badge">À venir</span>{% endif %}</td>
+{% if current_user.role != 'directeur' %}<td>{% if f.remaining > 0 %}<form method="post" action="{{ url_for('main.pay', fid=f.id) }}" class="inline"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<input name="amount" value="{{ '%.0f'|format(f.remaining) }}" style="width:75px"><select name="method"><option>Espèces</option><option>Chèque</option><option>Virement</option><option>Carte</option></select><button class="btn sm">OK</button></form>{% endif %}</td>{% endif %}</tr>{% endfor %}
+</table>{{ pager(page, 'main.payments') }}</div>
+<div class="card"><h2>Derniers encaissements</h2><table><tr><th>Date</th><th>Élève</th><th>Montant</th><th>Moyen</th></tr>
+{% for p in recent %}<tr><td>{{ p.paid_on.strftime('%d/%m/%Y') }}</td><td>{{ p.student.full_name }}</td><td>{{ p.amount|money }}</td><td>{{ p.method }}</td></tr>{% endfor %}</table></div>
+{% endblock %}

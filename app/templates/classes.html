@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}{% block title %}Classes et salles{% endblock %}
+{% block content %}<h1>Classes et salles</h1><p class="sub">{{ classes|length }} classes · {{ rooms|length }} salles</p>
+<div class="grid g2">
+<div class="card"><h2>Classes</h2><table><tr><th>Classe</th><th>Niveau</th><th>Effectif</th><th>Capacité</th><th></th></tr>
+{% for c in classes %}{% set n = counts.get(c.id, 0) %}<tr><td><b>{{ c.name }}</b></td><td>{{ c.level.name }}</td>
+<td><span class="badge {{ 'red' if n > c.capacity else 'orange' if n < 0.6*c.capacity else 'green' }}">{{ n }}</span></td><td>{{ c.capacity }}</td>
+<td><a href="{{ url_for('main.students', classe=c.id) }}">Élèves</a> · <a href="{{ url_for('main.timetable', classe=c.id) }}">EDT</a></td></tr>{% endfor %}</table></div>
+<div class="card"><h2>Salles</h2><table><tr><th>Salle</th><th>Type</th><th>Capacité</th></tr>
+{% for r in rooms %}<tr><td>{{ r.name }}</td><td>{{ r.kind }}</td><td>{{ r.capacity }}</td></tr>{% endfor %}</table></div></div>
+{% if current_user.role == 'admin' %}<div class="grid g2">
+<form method="post" class="card">{{ csrf() }}<h2>Nouvelle classe</h2><div class="form-grid">
+<label>Nom<input name="name" required placeholder="7ème C"></label>
+<label>Niveau<select name="level_id">{% for l in levels %}<option value="{{ l.id }}">{{ l.name }}</option>{% endfor %}</select></label>
+<label>Capacité<input type="number" name="capacity" value="30"></label></div><p><button class="btn">Créer</button></p></form>
+<form method="post" class="card">{{ csrf() }}<input type="hidden" name="kind" value="room"><h2>Nouvelle salle</h2><div class="form-grid">
+<label>Nom<input name="name" required></label><label>Type<select name="room_kind"><option>Salle de cours</option><option>Laboratoire</option><option>Salle informatique</option></select></label>
+<label>Capacité<input type="number" name="capacity" value="30"></label></div><p><button class="btn">Créer</button></p></form></div>{% endif %}
+{% endblock %}

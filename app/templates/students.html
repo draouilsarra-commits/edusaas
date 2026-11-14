@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% from "_macros.html" import pager %}{% block title %}Élèves{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center"><div><h1>Élèves</h1><p class="sub">{{ page.total }} élève(s) actif(s)</p></div>
+{% if current_user.role == 'admin' %}<a class="btn" href="{{ url_for('main.student_new') }}">+ Inscrire un élève</a>{% endif %}</div>
+<div class="card">
+<form class="inline" method="get" style="margin-bottom:12px">
+  <input name="q" placeholder="Rechercher un nom…" value="{{ request.args.get('q','') }}">
+  <select name="classe"><option value="">Toutes les classes</option>{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if request.args.get('classe')|int == c.id }}>{{ c.name }}</option>{% endfor %}</select>
+  <button class="btn ghost">Filtrer</button></form>
+<table><tr><th>Nom</th><th>Classe</th><th>Sexe</th><th>Ville</th><th>Parent</th><th></th></tr>
+{% for s in page.items %}<tr><td><b>{{ s.last_name }}</b> {{ s.first_name }}</td><td>{{ s.classroom.name }}</td><td>{{ s.gender }}</td><td>{{ s.city }}</td>
+<td>{{ s.parent.full_name if s.parent else '-' }}</td><td class="right"><a href="{{ url_for('main.student_detail', sid=s.id) }}">Dossier</a> · <a href="{{ url_for('main.bulletin', sid=s.id) }}">Bulletin</a></td></tr>{% endfor %}
+</table>{{ pager(page, 'main.students') }}</div>
+{% endblock %}

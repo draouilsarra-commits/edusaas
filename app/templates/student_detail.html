@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% block title %}{{ s.full_name }}{% endblock %}
+{% block content %}
+<h1>{{ s.full_name }}</h1>
+<p class="sub">{{ s.classroom.name }} · {{ s.classroom.level.name }} · {{ s.city or '' }} · Parent : {{ s.parent.full_name if s.parent else '-' }}</p>
+<p><a class="btn" href="{{ url_for('main.bulletin', sid=s.id, trimestre=1) }}">Bulletin T1</a>
+<a class="btn ghost" href="{{ url_for('main.bulletin', sid=s.id, trimestre=2) }}">T2</a>
+<a class="btn ghost" href="{{ url_for('main.bulletin', sid=s.id, trimestre=3) }}">T3</a></p>
+<div class="grid g2">
+<div class="card"><h2>Notes {{ year.label }}</h2>
+{% if grades %}<table><tr><th>Trim.</th><th>Matière</th><th>Coef.</th><th class="right">Note /20</th></tr>
+{% for g in grades %}<tr><td>T{{ g.term }}</td><td>{{ g.subject.name }}</td><td>{{ g.subject.coefficient }}</td>
+<td class="right"><span class="badge {{ 'red' if g.score < 10 else 'green' }}">{{ '%.2f'|format(g.score) }}</span></td></tr>{% endfor %}</table>
+{% else %}<p class="muted">Aucune note.</p>{% endif %}</div>
+<div class="card"><h2>Absences et retards</h2>
+{% if absences %}<table><tr><th>Date</th><th>Type</th><th>Statut</th>{% if current_user.role=='admin' %}<th></th>{% endif %}</tr>
+{% for a in absences %}<tr><td>{{ a.on_date.strftime('%d/%m/%Y') }}</td><td>{{ a.kind }}</td>
+<td>{% if a.justified %}<span class="badge green">Justifiée</span> {{ a.reason or '' }}{% else %}<span class="badge red">Non justifiée</span>{% endif %}</td>
+{% if current_user.role=='admin' %}<td>{% if not a.justified %}<form method="post" action="{{ url_for('main.justify', aid=a.id) }}" class="inline"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><input name="reason" placeholder="Motif" style="width:110px"><button class="btn sm ghost">Justifier</button></form>{% endif %}</td>{% endif %}</tr>{% endfor %}</table>
+{% else %}<p class="muted">Aucune absence.</p>{% endif %}</div>
+</div>
+{% if fees is not none %}
+<div class="card"><h2>Situation financière</h2>
+<table><tr><th>Échéance</th><th>Date</th><th>Montant</th><th>Payé</th><th>Reste</th><th>Statut</th>{% if current_user.role in ['admin','comptable'] %}<th></th>{% endif %}</tr>
+{% for f in fees %}<tr><td>{{ f.label }}</td><td>{{ f.due_date.strftime('%d/%m/%Y') }}</td><td>{{ f.amount|money }}</td><td>{{ f.paid_amount|money }}</td><td>{{ f.remaining|money }}</td>
+<td>{% if f.remaining <= 0 %}<span class="badge green">Payé</span>{% elif f.is_late %}<span class="badge red">En retard</span>{% else %}<span class="badge">À venir</span>{% endif %}</td>
+{% if current_user.role in ['admin','comptable'] %}<td>{% if f.remaining > 0 %}<form method="post" action="{{ url_for('main.pay', fid=f.id) }}" class="inline"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><input name="amount" value="{{ '%.0f'|format(f.remaining) }}" style="width:80px"><button class="btn sm">Encaisser</button></form>{% endif %}</td>{% endif %}</tr>{% endfor %}
+</table></div>{% endif %}
+{% endblock %}

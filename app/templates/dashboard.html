@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+  <div>
+    <h1>{{ icon }} {{ title }}</h1>
+    <p class="sub">Module Business Intelligence & Aide à la Décision · données en temps réel de l'établissement</p>
+  </div>
+  {% if d.filters and 'trimestre' in d.filters %}
+  <form class="inline noprint" method="get">
+    <label class="muted">Trimestre</label>
+    <select name="trimestre" onchange="this.form.submit()">
+      {% for t in [1,2,3] %}<option value="{{ t }}" {{ 'selected' if d.filters.trimestre == t }}>T{{ t }}</option>{% endfor %}
+    </select>
+  </form>
+  {% endif %}
+  <button class="btn ghost noprint" onclick="window.print()">🖨️ Imprimer / PDF</button>
+</div>
+
+<div class="kpis">
+  {% for k in d.kpis %}
+  <div class="kpi {{ k.tone or '' }}"><div class="l">{{ k.label }}</div><div class="v">{{ k.value }}</div>{% if k.sub %}<div class="s">{{ k.sub }}</div>{% endif %}</div>
+  {% endfor %}
+</div>
+
+{% if d.alerts %}
+<div class="card"><h2>🔔 Alertes</h2>
+  {% for tone, msg in d.alerts %}<div class="alert {{ tone }}">{{ msg }}</div>{% endfor %}
+</div>
+{% endif %}
+
+{% if d.recommendations %}
+<div class="card"><h2>💡 Recommandations automatiques pour la direction</h2>
+  {% for tag, txt in d.recommendations %}<div class="reco"><div class="tag">{{ tag }}</div><div>{{ txt }}</div></div>{% endfor %}
+</div>
+{% endif %}
+
+{% if d.simulation %}
+<div class="card" id="simulator"><h2>🧪 Simulation de scénarios d'effectifs</h2>
+  <div class="sim">
+    <div><label>Variation des effectifs : <b id="v_eff">0</b> %</label><input type="range" id="eff" min="-30" max="30" value="0"></div>
+    <div><label>Variation des frais de scolarité : <b id="v_fee">0</b> %</label><input type="range" id="fee" min="-20" max="30" value="0"></div>
+    <div><label>Taux de recouvrement : <b id="v_rec"></b> %</label><input type="range" id="rec" min="60" max="100" step="0.5"></div>
+    <div><label>Élèves par classe : <b id="v_cs"></b></label><input type="range" id="cs" min="18" max="40"></div>
+  </div>
+  <div class="kpis" style="margin-top:16px">
+    <div class="kpi"><div class="l">Effectif simulé</div><div class="v" id="o_st"></div><div class="s" id="o_st_s"></div></div>
+    <div class="kpi"><div class="l">Recettes annuelles simulées</div><div class="v" id="o_rev"></div><div class="s" id="o_bal"></div></div>
+    <div class="kpi"><div class="l">Classes nécessaires</div><div class="v" id="o_cls"></div><div class="s" id="o_cls_s"></div></div>
+    <div class="kpi"><div class="l">Enseignants nécessaires</div><div class="v" id="o_t"></div><div class="s" id="o_t_s"></div></div>
+    <div class="kpi"><div class="l">Salles nécessaires</div><div class="v" id="o_r"></div><div class="s" id="o_r_s"></div></div>
+  </div>
+  <p class="note">Hypothèses : {{ d.simulation.hours_per_class }} h de cours / semaine par classe, charge contractuelle moyenne de {{ d.simulation.contract }} h par enseignant, {{ d.simulation.room_slots }} créneaux disponibles par salle et par semaine.</p>
+</div>
+<script>
+(function(){
+  const B = {{ d.simulation | tojson }};
+  const $ = id => document.getElementById(id);
+  $('rec').value = B.recovery; $('cs').value = B.class_size;
+  const fmt = v => Math.round(v).toLocaleString('fr-FR') + ' DT';
+  function run(){
+    const eff=+$('eff').value, fee=+$('fee').value, rec=+$('rec').value, cs=+$('cs').value;
+    $('v_eff').textContent = (eff>0?'+':'')+eff; $('v_fee').textContent=(fee>0?'+':'')+fee; $('v_rec').textContent=rec; $('v_cs').textContent=cs;
+    const st = Math.round(B.forecast*(1+eff/100));
+    const rev = st*B.avg_fee*(1+fee/100)*rec/100;
+    const cls = Math.ceil(st/cs);
+    const t = Math.ceil(cls*B.hours_per_class/B.contract);
+    const rooms = Math.ceil(cls*B.hours_per_class/B.room_slots);
+    $('o_st').textContent = st; $('o_st_s').textContent = 'base prévisionnelle : '+B.forecast+' élèves';
+    $('o_rev').textContent = fmt(rev); const bal = rev-B.expenses;
+    $('o_bal').textContent = 'solde vs dépenses prévues : '+(bal>=0?'+':'')+fmt(bal);
+    $('o_bal').style.color = bal>=0 ? '#16a37f' : '#e5484d';
+    $('o_cls').textContent = cls; $('o_cls_s').textContent = 'actuel : '+B.classes+(cls>B.classes?' → +'+(cls-B.classes)+' à ouvrir':'');
+    $('o_t').textContent = t; $('o_t_s').textContent = 'actuel : '+B.teachers+(t>B.teachers?' → recruter '+(t-B.teachers):'');
+    $('o_r').textContent = rooms; $('o_r_s').textContent = 'salles de cours actuelles : '+B.rooms;
+  }
+  document.querySelectorAll('#simulator input').forEach(i=>i.addEventListener('input', run)); run();
+})();
+</script>
+{% endif %}
+
+<div class="grid g2">
+  {% for c in d.charts %}
+  <div class="card {{ 'wide' if c.wide }}"><h2>{{ c.title }}</h2><div class="chartbox"><canvas id="c_{{ c.id }}"></canvas></div></div>
+  {% endfor %}
+</div>
+
+{% for t in d.tables %}
+<div class="card"><h2>{{ t.title }} <span class="badge">{{ t.rows|length }}</span></h2>
+  {% if t.rows %}
+  <div style="overflow-x:auto"><table>
+    <tr>{% for h in t.head %}<th>{{ h }}</th>{% endfor %}</tr>
+    {% for row in t.rows %}<tr>{% for cell in row %}
+      <td>{% if cell is mapping %}<a href="{{ cell.link }}">{{ cell.text }}</a>
+          {% elif cell in ['Élevé','Surchargée','Surcharge','Déséquilibré','Non remplacé'] %}<span class="badge red">{{ cell }}</span>
+          {% elif cell in ['Moyen','Sous-remplie','Sous-charge'] %}<span class="badge orange">{{ cell }}</span>
+          {% elif cell in ['Normale','Équilibré','Faible'] %}<span class="badge green">{{ cell }}</span>
+          {% else %}{{ cell }}{% endif %}</td>{% endfor %}</tr>{% endfor %}
+  </table></div>
+  {% else %}<p class="muted">Aucun élément à signaler.</p>{% endif %}
+</div>
+{% endfor %}
+
+{% if d.note %}<p class="note">ℹ️ {{ d.note }}</p>{% endif %}
+
+{% if current_user.role in ['admin','directeur'] %}
+<div class="card noprint"><h2>📤 Export des données (Power BI, Excel, entrepôt de données)</h2>
+  {% for n in ['eleves','notes','paiements','echeances','absences'] %}<a class="btn ghost sm" href="{{ url_for('bi.export', name=n) }}">{{ n }}.csv</a> {% endfor %}
+</div>
+{% endif %}
+
+<script>
+const CHARTS = {{ d.charts | tojson }};
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+Chart.defaults.color = '#5b6478';
+for (const c of CHARTS) {
+  const o = c.opts || {};
+  const isPie = c.type === 'doughnut' || c.type === 'pie';
+  const options = {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: c.datasets.length > 1 || isPie, position: 'bottom'}}};
+  if (!isPie) {
+    options.scales = {x: {stacked: !!o.stacked, grid: {display: false}}, y: {stacked: !!o.stacked, beginAtZero: true}};
+    if (o.ymax) options.scales[o.horizontal ? 'x' : 'y'].max = o.ymax;
+    if (o.horizontal) { options.indexAxis = 'y'; }
+    if (o.dual) { options.scales.y1 = {position: 'right', beginAtZero: true, max: 100, grid: {display: false}}; options.scales.y.max = 20; }
+    if (o.xlabel) { options.scales.x = {type: 'linear', title: {display: true, text: o.xlabel}}; options.scales.y.title = {display: true, text: o.ylabel}; }
+  }
+  c.datasets.forEach(ds => { if (c.type === 'line' || ds.type === 'line') { ds.backgroundColor = ds.borderColor; ds.borderWidth = 2; } else if (!isPie) { ds.borderRadius = 4; } });
+  new Chart(document.getElementById('c_' + c.id), {type: c.type, data: {labels: c.labels, datasets: c.datasets}, options});
+}
+</script>
+{% endblock %}

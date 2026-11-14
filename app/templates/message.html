@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}{{ m.subject }}{% endblock %}
+{% block content %}<p><a href="{{ url_for('main.messages') }}">‹ Retour</a></p>
+<div class="card" style="max-width:760px"><h1>{{ m.subject }}</h1><p class="sub">De {{ m.sender.full_name if m.sender else 'Système' }} · {{ m.sent_at.strftime('%d/%m/%Y %H:%M') }}</p>
+<div style="white-space:pre-wrap">{{ m.body }}</div></div>{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}{% block title %}Réclamations{% endblock %}
+{% block content %}<h1>📣 Réclamations et demandes des parents</h1><p class="sub">{{ items|length }} élément(s)</p>
+{% if current_user.role == 'parent' %}
+<form method="post" class="card">{{ csrf() }}<h2>Nouvelle réclamation / demande</h2><div class="form-grid">
+<label>Catégorie<select name="category"><option>Pédagogie</option><option>Paiement</option><option>Transport</option><option>Discipline</option><option>Emploi du temps</option><option>Autre</option></select></label>
+<label>Objet<input name="subject" required></label></div><p><textarea name="body" required placeholder="Détaillez votre demande…"></textarea></p><button class="btn">Envoyer</button></form>
+{% else %}<div class="tabs"><a href="{{ url_for('main.complaints') }}">Toutes</a>{% for s in ['ouverte','en cours','résolue'] %}<a href="{{ url_for('main.complaints', statut=s) }}" class="{{ 'on' if request.args.get('statut') == s }}">{{ s|capitalize }}</a>{% endfor %}</div>{% endif %}
+<div class="card"><table><tr><th>Date</th>{% if current_user.role != 'parent' %}<th>Parent</th>{% endif %}<th>Catégorie</th><th>Objet</th><th>Statut</th></tr>
+{% for c in items %}<tr><td>{{ c.created_at.strftime('%d/%m/%Y') }}</td>{% if current_user.role != 'parent' %}<td>{{ c.parent.full_name if c.parent else '-' }}</td>{% endif %}
+<td>{{ c.category }}</td><td><b>{{ c.subject }}</b><br><span class="muted">{{ c.body }}</span></td>
+<td>{% if current_user.role == 'parent' %}<span class="badge {{ 'green' if c.status == 'résolue' else 'orange' }}">{{ c.status }}</span>
+{% else %}<form method="post" class="inline">{{ csrf() }}<input type="hidden" name="id" value="{{ c.id }}"><select name="status" onchange="this.form.submit()">{% for s in ['ouverte','en cours','résolue'] %}<option {{ 'selected' if c.status == s }}>{{ s }}</option>{% endfor %}</select></form>{% endif %}</td></tr>{% endfor %}</table></div>{% endblock %}

@@ -1,0 +1,9 @@
+{% macro pager(page, endpoint) %}
+{% if page.pages > 1 %}<div class="pagination">
+  {% set args = request.args.to_dict() %}
+  {% if page.has_prev %}{% set _ = args.update({'page': page.prev_num}) %}<a href="{{ url_for(endpoint, **args) }}">‹ Préc.</a>{% endif %}
+  <span>Page {{ page.page }} / {{ page.pages }} ({{ page.total }})</span>
+  {% if page.has_next %}{% set _ = args.update({'page': page.next_num}) %}<a href="{{ url_for(endpoint, **args) }}">Suiv. ›</a>{% endif %}
+</div>{% endif %}
+{% endmacro %}
+{% macro csrf() %}<input type="hidden" name="_csrf" value="{{ csrf_token }}">{% endmacro %}

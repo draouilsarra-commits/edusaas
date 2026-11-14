@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% from "_macros.html" import pager, csrf %}{% block title %}Utilisateurs{% endblock %}
+{% block content %}<h1>Utilisateurs de l'établissement</h1><p class="sub">Gestion des comptes et des droits d'accès</p>
+<div class="tabs"><a href="{{ url_for('main.users') }}" class="{{ 'on' if not role }}">Tous</a>
+{% for r in ['admin','directeur','enseignant','comptable','parent','eleve'] %}<a href="{{ url_for('main.users', role=r) }}" class="{{ 'on' if role == r }}">{{ ROLE_LABELS[r] }}</a>{% endfor %}</div>
+<div class="card"><table><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Dernière connexion</th><th>Statut</th><th></th></tr>
+{% for u in page.items %}<tr><td>{{ u.full_name }}</td><td>{{ u.email }}</td><td>{{ u.role_label }}</td><td>{{ u.last_login.strftime('%d/%m/%Y %H:%M') if u.last_login else '-' }}</td>
+<td>{% if u.active %}<span class="badge green">Actif</span>{% else %}<span class="badge red">Désactivé</span>{% endif %}</td>
+<td><form method="post" action="{{ url_for('main.user_toggle', uid=u.id) }}">{{ csrf() }}<button class="btn sm ghost">{{ 'Désactiver' if u.active else 'Activer' }}</button></form></td></tr>{% endfor %}</table>
+{{ pager(page, 'main.users') }}</div>
+<form method="post" class="card">{{ csrf() }}<h2>Créer un compte</h2><div class="form-grid">
+<label>Nom complet<input name="full_name" required></label><label>E-mail<input type="email" name="email" required></label>
+<label>Rôle<select name="role"><option value="directeur">Directeur</option><option value="comptable">Comptable</option><option value="admin">Administrateur</option><option value="parent">Parent</option></select></label>
+<label>Mot de passe temporaire<input name="password" required></label></div>
+<p class="note">Les enseignants se créent depuis la page Enseignants, les élèves et parents depuis l'inscription.</p>
+<p><button class="btn">Créer</button></p></form>{% endblock %}

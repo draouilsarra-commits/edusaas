@@ -1,0 +1,12 @@
+# Blueprint Render : service web Docker. La base PostgreSQL (ex. Neon) est fournie via DATABASE_URL.
+services:
+  - type: web
+    name: edusaas
+    runtime: docker
+    plan: free
+    healthCheckPath: /login
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false   # à renseigner dans le tableau de bord Render (chaîne de connexion PostgreSQL)

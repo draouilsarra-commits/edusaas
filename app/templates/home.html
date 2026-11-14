@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% block title %}Accueil{% endblock %}
+{% block content %}
+<h1>Bonjour {{ current_user.full_name.split(' ')[0] }} 👋</h1>
+<p class="sub">{{ current_user.role_label }} · Année scolaire {{ year.label }}{% if unread %} · <a href="{{ url_for('main.messages') }}">{{ unread }} message(s) non lu(s)</a>{% endif %}</p>
+
+{% if current_user.role == 'enseignant' %}
+<div class="kpis">
+  <div class="kpi"><div class="l">Matière</div><div class="v" style="font-size:18px">{{ teacher.subject.name }}</div></div>
+  <div class="kpi"><div class="l">Classes</div><div class="v">{{ classes|length }}</div></div>
+  <div class="kpi {{ 'bad' if weekly_hours > teacher.contract_hours else '' }}"><div class="l">Charge hebdomadaire</div><div class="v">{{ weekly_hours }} h</div><div class="s">contrat : {{ teacher.contract_hours }} h</div></div>
+</div>
+<div class="grid g2">
+<div class="card"><h2>Mes cours aujourd'hui</h2>
+  {% if today_slots %}<table><tr><th>Heure</th><th>Classe</th><th>Salle</th></tr>
+  {% for s in today_slots %}<tr><td>{{ s.hour }}h – {{ s.hour+1 }}h</td><td>{{ s.classroom.name }}</td><td>{{ s.room.name }}</td></tr>{% endfor %}</table>
+  {% else %}<p class="muted">Pas de cours aujourd'hui.</p>{% endif %}</div>
+<div class="card"><h2>Actions rapides</h2>
+  {% for c in classes %}<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><b>{{ c.name }}</b>
+  <span><a class="btn sm ghost" href="{{ url_for('main.grades', classe=c.id) }}">Notes</a> <a class="btn sm ghost" href="{{ url_for('main.absences', classe=c.id) }}">Appel</a> <a class="btn sm ghost" href="{{ url_for('main.students', classe=c.id) }}">Élèves</a></span></div>{% endfor %}
+</div></div>
+{% else %}
+{% for x in summary %}
+<div class="card"><h2>🎒 {{ x.s.full_name }} – {{ x.s.classroom.name }}</h2>
+  <div class="kpis">
+    <div class="kpi {{ 'bad' if x.avg and x.avg < 10 else 'good' }}"><div class="l">Moyenne de l'année</div><div class="v">{{ x.avg or '-' }}</div></div>
+    <div class="kpi {{ 'warn' if x.absences >= 4 }}"><div class="l">Absences</div><div class="v">{{ x.absences }}</div></div>
+    {% if current_user.role == 'parent' %}<div class="kpi {{ 'bad' if x.due > 0 else 'good' }}"><div class="l">Reste à payer (échu)</div><div class="v">{{ x.due|money }}</div></div>{% endif %}
+  </div>
+  <a class="btn" href="{{ url_for('main.student_detail', sid=x.s.id) }}">Dossier complet</a>
+  <a class="btn ghost" href="{{ url_for('main.bulletin', sid=x.s.id) }}">Bulletin</a>
+  <a class="btn ghost" href="{{ url_for('main.timetable', classe=x.s.classroom_id) }}">Emploi du temps</a>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}{% block title %}Enseignants{% endblock %}
+{% block content %}<h1>Enseignants</h1><p class="sub">{{ teachers|length }} enseignant(s)</p>
+<div class="card"><table><tr><th>Nom</th><th>Matière</th><th>E-mail</th><th>Heures planifiées</th><th>Contrat</th><th></th></tr>
+{% for t in teachers|sort(attribute='user.full_name') %}{% set h = load.get(t.id, 0) %}<tr><td><b>{{ t.name }}</b></td><td>{{ t.subject.name }}</td><td>{{ t.user.email }}</td>
+<td><span class="badge {{ 'red' if h > t.contract_hours else 'orange' if h < 0.7*t.contract_hours else 'green' }}">{{ h }} h</span></td><td>{{ t.contract_hours }} h</td>
+<td><a href="{{ url_for('main.timetable', enseignant=t.id) }}">Emploi du temps</a></td></tr>{% endfor %}</table></div>
+{% if current_user.role == 'admin' %}
+<form method="post" class="card">{{ csrf() }}<h2>Ajouter un enseignant</h2><div class="form-grid">
+<label>Nom complet<input name="full_name" required></label><label>E-mail<input type="email" name="email" required></label>
+<label>Mot de passe temporaire<input name="password" required value="Prof@2026"></label>
+<label>Matière<select name="subject_id">{% for s in subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></label>
+<label>Heures contractuelles / semaine<input type="number" name="contract_hours" value="18"></label></div>
+<p><button class="btn">Ajouter</button></p></form>{% endif %}{% endblock %}

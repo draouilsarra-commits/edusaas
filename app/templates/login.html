@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connexion – EduSaaS</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body><div class="login-wrap"><form class="login" method="post">
+  <div class="brand" style="color:#111a2e;font-size:26px;padding:0">Edu<span style="color:#2a6fdb">SaaS</span></div>
+  <p class="muted" style="margin-top:4px">Plateforme de gestion scolaire multi-établissement</p>
+  {% with msgs = get_flashed_messages(with_categories=true) %}{% for cat, m in msgs %}<div class="alert {{ cat }}">{{ m }}</div>{% endfor %}{% endwith %}
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <label class="muted">Adresse e-mail</label><input name="email" type="email" required autofocus>
+  <label class="muted">Mot de passe</label><input name="password" type="password" required>
+  <button class="btn">Se connecter</button>
+  <p class="note">Comptes de démonstration : voir le document de connexion fourni.</p>
+</form></div></body></html>

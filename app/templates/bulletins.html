@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block title %}Bulletins{% endblock %}
+{% block content %}<h1>📄 Bulletins et classement</h1><p class="sub">Moyennes pondérées par coefficient</p>
+<form class="inline card" method="get"><select name="classe">{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if c.id == cid }}>{{ c.name }}</option>{% endfor %}</select>
+<select name="trimestre">{% for t in [1,2,3] %}<option value="{{ t }}" {{ 'selected' if t == term }}>Trimestre {{ t }}</option>{% endfor %}</select><button class="btn ghost">Afficher</button></form>
+<div class="card"><table><tr><th>Rang</th><th>Élève</th><th>Moyenne</th><th>Mention</th><th></th></tr>
+{% for s, avg in rows %}<tr><td>{{ loop.index if avg else '-' }}</td><td>{{ s.full_name }}</td><td>{% if avg %}<span class="badge {{ 'red' if avg < 10 else 'green' }}">{{ '%.2f'|format(avg) }}</span>{% else %}-{% endif %}</td><td>{{ mention(avg) }}</td>
+<td><a href="{{ url_for('main.bulletin', sid=s.id, trimestre=term) }}">Bulletin</a></td></tr>{% endfor %}</table></div>{% endblock %}

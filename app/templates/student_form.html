@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% from "_macros.html" import csrf %}{% block title %}Inscription{% endblock %}
+{% block content %}<h1>Inscrire un élève</h1><p class="sub">L'échéancier des 10 mensualités est généré automatiquement selon le niveau.</p>
+<form method="post" class="card">{{ csrf() }}
+<h2>Élève</h2><div class="form-grid">
+<label>Prénom<input name="first_name" required></label><label>Nom<input name="last_name" required></label>
+<label>Sexe<select name="gender"><option>F</option><option>M</option></select></label>
+<label>Date de naissance<input type="date" name="birth_date"></label>
+<label>Ville d'origine<input name="city"></label>
+<label>Classe<select name="classroom_id" required>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label></div>
+<h2 style="margin-top:18px">Parent (compte créé automatiquement s'il n'existe pas)</h2><div class="form-grid">
+<label>Nom complet<input name="parent_name"></label><label>E-mail<input type="email" name="parent_email"></label>
+<label>Mot de passe temporaire<input name="parent_password" placeholder="Parent@2026"></label></div>
+<p><button class="btn">Inscrire</button></p></form>{% endblock %}
